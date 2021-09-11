@@ -34,6 +34,8 @@ jobs:
               run: |
                   git config --global user.email "no-reply@github.com"
                   git config --global user.name "Github Actions"
-                  ./paper build
-            - name: Build javadocs
-              run: mvn -pl Paper-API,Paper-MojangAPI -am javadoc:javadoc
+                  ./paper jar
+            - name: Upload a Build Artifact
+              uses: actions/upload-artifact@v2.2.4
+              with:
+                path: paperclip.jar
