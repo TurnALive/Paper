@@ -1,9 +1,4 @@
 # Here lie dragons!
-#
-# Note that there is no artifact step in this script. We do not want Paperclip
-# jars to be built for every push & PR; our CI handles pushes to branches, while
-# PRs can themselves link to Paperclip jars if it is necessary. Official such
-# PRs will take use of testing builds.
 
 name: Build Paper
 on: [push, pull_request]
@@ -11,16 +6,12 @@ on: [push, pull_request]
 jobs:
     build:
         runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                java: [16, 8]
-            fail-fast: true
         steps:
             - uses: actions/checkout@v2
-            - name: JDK ${{ matrix.java }}
+            - name: Set up JDK 16
               uses: actions/setup-java@v2
               with:
-                  java-version: ${{ matrix.java }}
+                  java-version: '16'
                   distribution: 'adopt'
             - name: Cache maven
               uses: actions/cache@v2
@@ -35,7 +26,9 @@ jobs:
                   git config --global user.email "no-reply@github.com"
                   git config --global user.name "Github Actions"
                   ./paper jar
+                  mv paperclip.jar paper-turna-$GITHUB_RUN_NUMBER.jar
             - name: Upload a Build Artifact
               uses: actions/upload-artifact@v2.2.4
               with:
-                path: paperclip.jar
+                name: PaperSpigot-TurnA-${{ github.run_number }}
+                path: paper-turna-${{ github.run_number }}.jar
