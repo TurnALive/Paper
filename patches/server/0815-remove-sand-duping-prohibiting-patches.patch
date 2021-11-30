@@ -1,0 +1,144 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: xslingcn <xslings@163.com>
+Date: Wed, 1 Dec 2021 04:05:25 +0800
+Subject: [PATCH] remove sand-duping prohibiting patches
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 3febcc7e88b74d4bdb45e633fdaa9d3313a6ae0b..802e5cd0c41e9366e3fd4c222f98fc15966e297e 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -388,36 +388,36 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, i
+         return chunkMap.playerEntityTrackerTrackMaps[type.ordinal()].getObjectsInRange(MCUtil.getCoordinateKey(this));
+     }
+     // Paper end - optimise entity tracking
+-    // Paper start - make end portalling safe
+-    public BlockPos portalBlock;
+-    public ServerLevel portalWorld;
+-    public void tickEndPortal() {
+-        BlockPos pos = this.portalBlock;
+-        ServerLevel world = this.portalWorld;
+-        this.portalBlock = null;
+-        this.portalWorld = null;
+-
+-        if (pos == null || world == null || world != this.level) {
+-            return;
+-        }
+-
+-        if (this.isPassenger() || this.isVehicle() || !this.canChangeDimensions() || this.isRemoved() || !this.valid || !this.isAlive()) {
+-            return;
+-        }
+-
+-        ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.END ? Level.OVERWORLD : Level.END; // CraftBukkit - SPIGOT-6152: send back to main overworld in custom ends
+-        ServerLevel worldserver = world.getServer().getLevel(resourcekey);
+-
+-        org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(this.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
+-        event.callEvent();
+-
+-        if (this instanceof ServerPlayer) {
+-            ((ServerPlayer)this).changeDimension(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
+-            return;
+-        }
+-        this.teleportTo(worldserver, null);
+-    }
+-    // Paper end - make end portalling safe
++    // // Paper start - make end portalling safe
++    // public BlockPos portalBlock;
++    // public ServerLevel portalWorld;
++    // public void tickEndPortal() {
++    //     BlockPos pos = this.portalBlock;
++    //     ServerLevel world = this.portalWorld;
++    //     this.portalBlock = null;
++    //     this.portalWorld = null;
++
++    //     if (pos == null || world == null || world != this.level) {
++    //         return;
++    //     }
++
++    //     if (this.isPassenger() || this.isVehicle() || !this.canChangeDimensions() || this.isRemoved() || !this.valid || !this.isAlive()) {
++    //         return;
++    //     }
++
++    //     ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.END ? Level.OVERWORLD : Level.END; // CraftBukkit - SPIGOT-6152: send back to main overworld in custom ends
++    //     ServerLevel worldserver = world.getServer().getLevel(resourcekey);
++
++    //     org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(this.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
++    //     event.callEvent();
++
++    //     if (this instanceof ServerPlayer) {
++    //         ((ServerPlayer)this).changeDimension(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
++    //         return;
++    //     }
++    //     this.teleportTo(worldserver, null);
++    // }
++    // // Paper end - make end portalling safe
+ 
+     // Paper start
+     /**
+diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+index 0c94b4cb6ee0c3dffe0b67a2291d0160ae0ef96f..e5d5fb8907fbda25aee001d517dec33eb63f3116 100644
+--- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -110,11 +110,11 @@ public class FallingBlockEntity extends Entity {
+ 
+     @Override
+     public void tick() {
+-        // Paper start - fix sand duping
+-        if (this.isRemoved()) {
+-            return;
+-        }
+-        // Paper end - fix sand duping
++        // // Paper start - fix sand duping
++        // if (this.isRemoved()) {
++        //     return;
++        // }
++        // // Paper end - fix sand duping
+         if (this.blockState.isAir()) {
+             this.discard();
+         } else if (this.level.isClientSide && this.removeAtMillis > 0L) {
+@@ -152,11 +152,11 @@ public class FallingBlockEntity extends Entity {
+ 
+             this.move(MoverType.SELF, this.getDeltaMovement());
+ 
+-            // Paper start - fix sand duping
+-            if (this.isRemoved()) {
+-                return;
+-            }
+-            // Paper end - fix sand duping
++            // // Paper start - fix sand duping
++            // if (this.isRemoved()) {
++            //     return;
++            // }
++            // // Paper end - fix sand duping
+ 
+             // Paper start - Configurable EntityFallingBlock height nerf
+             if (this.level.paperConfig.fallingBlockHeightNerf != 0 && this.getY() > this.level.paperConfig.fallingBlockHeightNerf) {
+diff --git a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+index 19892cb3cb290add4f094dc87bb22106e4f07a24..019c022e9befb39786524ca908cc21f7c1caa4f8 100644
+--- a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+@@ -53,10 +53,20 @@ public class EndPortalBlock extends BaseEntityBlock {
+                 // return; // CraftBukkit - always fire event in case plugins wish to change it
+             }
+ 
+-            // Paper start - move all of this logic into portal tick
+-            entity.portalWorld = ((ServerLevel)world);
+-            entity.portalBlock = pos.immutable();
+-            // Paper end - move all of this logic into portal tick
++            // CraftBukkit start - Entity in portal
++            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
++            world.getCraftServer().getPluginManager().callEvent(event);
++
++            if (entity instanceof ServerPlayer) {
++                ((ServerPlayer) entity).changeDimension(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
++                return;
++            }
++            // CraftBukkit end
++            entity.changeDimension(worldserver);
++            // // Paper start - move all of this logic into portal tick
++            // entity.portalWorld = ((ServerLevel)world);
++            // entity.portalBlock = pos.immutable();
++            // // Paper end - move all of this logic into portal tick
+         }
+ 
+     }
